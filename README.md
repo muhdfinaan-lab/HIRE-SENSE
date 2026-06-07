@@ -1,21 +1,20 @@
-# 📄 HireSense — AI-Powered Resume Screener
+# HireSense — AI-Powered Resume Screener
 
 > Production-grade resume screening via a structured 3-step LLM pipeline. Beats naive keyword matching with semantic skill evaluation, weighted scoring, and cross-candidate ranking refinement.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red)
 ![OpenRouter](https://img.shields.io/badge/OpenRouter-API-purple)
-![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
 
-## 🚀 Demo
+##  Demo
 
 Upload a job description + candidate resumes → get ranked results with dimension-level scores, skill gap analysis, and recruiter summaries in seconds.
 
 ---
 
-## 🏗️ How It Works — 3-Step Pipeline
+##  How It Works — 3-Step Pipeline
 
 ### Step 1 — JD Analysis (`extract_ideal_profile`)
 The job description is sent to the LLM with a strict JSON-only prompt. It returns a structured scoring rubric containing required skills, preferred skills, seniority level, minimum experience, education requirement, responsibilities, domain keywords, and deal-breaker red flags. This becomes the single source of truth for all subsequent scoring.
@@ -41,7 +40,7 @@ All scored candidates are sent together for a comparative review. The model appl
 
 ---
 
-## 💡 Why This Beats Naive Keyword Matching
+## Why This Beats Naive Keyword Matching
 
 | Naive Keyword Matching | HireSense |
 |---|---|
@@ -53,7 +52,7 @@ All scored candidates are sent together for a comparative review. The model appl
 
 ---
 
-## ✨ Features
+## Features
 
 - **Multi-format support** — PDF, DOCX, and plain text resumes
 - **5-dimension scoring** with configurable weights
@@ -67,7 +66,7 @@ All scored candidates are sent together for a comparative review. The model appl
 
 ---
 
-## 🛠️ Setup
+## Setup
 
 ### 1. Clone the repository
 ```bash
@@ -94,7 +93,7 @@ streamlit run app.py
 
 ---
 
-## 📦 Requirements
+## Requirements
 
 ```
 streamlit
@@ -109,7 +108,7 @@ python-dotenv
 
 ---
 
-## 🤖 Supported Models
+## Supported Models
 
 | Label | Model ID |
 |---|---|
@@ -123,7 +122,7 @@ Switch models anytime from the sidebar — no code changes needed.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 hiresense/
@@ -136,7 +135,7 @@ hiresense/
 
 ---
 
-## ⚡ Performance Design
+## Performance Design
 
 - `@st.cache_resource` — prevents OpenRouter client re-initialisation on every rerun
 - SHA-256 file hashing — deduplicates identical resume files before scoring
@@ -145,7 +144,7 @@ hiresense/
 
 ---
 
-## 📊 Output
+## Output
 
 Each candidate card shows:
 - Overall score (raw + refined) with label (Excellent / Good / Moderate / Weak / Poor)
@@ -160,17 +159,14 @@ Full results are also available as a downloadable CSV.
 
 ---
 
-## 🔒 Environment Variables
+## Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
-| `OPENROUTER_API_KEY` | ✅ Yes | Your OpenRouter API key |
+| `OPENROUTER_API_KEY` | Yes | Your OpenRouter API key |
 
 ---
 
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
