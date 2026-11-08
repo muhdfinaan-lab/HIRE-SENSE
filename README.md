@@ -6,8 +6,6 @@ AI-assisted resume screening. Paste a job description, upload resumes, and get a
 
 > The demo runs on a free API tier with shared limits. If it shows a rate-limit error, wait a few minutes and try again. Please use sample or fake resumes only. Do not upload real people's CVs to the public demo.
 
-![HireSense screenshot](screenshot.png)
-
 ---
 
 ## What it does
