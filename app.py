@@ -717,11 +717,11 @@ with st.sidebar:
 
     st.markdown("---")
     if client:
-        st.success("✅ OpenRouter Connected")
+        st.success("✅ Groq Connected")
         st.caption(f"Model: `{st.session_state.gpt_model}`")
     else:
-        st.error("⚠️ OpenRouter not connected")
-        st.caption("Add OPENROUTER_API_KEY to .env")
+        st.error("⚠️ Groq not connected")
+        st.caption("Add GROQ_API_KEY to .env")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -791,7 +791,7 @@ elif page == "📤 Upload & Screen":
 
     if start:
         if not client:
-            st.error("❌ OpenRouter API key missing. Add OPENROUTER_API_KEY to .env.")
+            st.error("❌ Groq API key missing. Add GROQ_API_KEY to .env")
         elif not job_description.strip():
             st.error("❌ Please enter a job description.")
         elif not uploaded_files:
@@ -1035,7 +1035,7 @@ are absent. This system instead:
 st.markdown("---")
 st.markdown("""
 <div class="footer">
-    <p>Powered by <strong>OpenRouter LLM API</strong> — Structured Prompt Engineering</p>
+    <p>Powered by <strong>Groq LLM API</strong> — Structured Prompt Engineering</p>
     <p style="font-size:.8rem">HireSense • 3-Step AI Screening Pipeline</p>
 </div>
 """, unsafe_allow_html=True)
