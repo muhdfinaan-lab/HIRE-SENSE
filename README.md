@@ -1,176 +1,125 @@
-# HireSense — AI-Powered Resume Screener
+# HireSense
 
-> Production-grade resume screening via a structured 3-step LLM pipeline. Beats naive keyword matching with semantic skill evaluation, weighted scoring, and cross-candidate ranking refinement.
+AI-assisted resume screening. Paste a job description, upload resumes, and get a ranked list of candidates with a score breakdown and a short explanation for each one.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red)
-![OpenRouter](https://img.shields.io/badge/OpenRouter-API-purple)
+**Live demo:** https://hire-sense-demo.streamlit.app
 
----
+> The demo runs on a free API tier with shared limits. If it shows a rate-limit error, wait a few minutes and try again. Please use sample or fake resumes only. Do not upload real people's CVs to the public demo.
 
-##  Demo
-
-Upload a job description + candidate resumes → get ranked results with dimension-level scores, skill gap analysis, and recruiter summaries in seconds.
+![HireSense screenshot](screenshot.png)
 
 ---
 
-##  How It Works — 3-Step Pipeline
+## What it does
 
-### Step 1 — JD Analysis (`extract_ideal_profile`)
-The job description is sent to the LLM with a strict JSON-only prompt. It returns a structured scoring rubric containing required skills, preferred skills, seniority level, minimum experience, education requirement, responsibilities, domain keywords, and deal-breaker red flags. This becomes the single source of truth for all subsequent scoring.
+- Reads a job description and turns it into a structured scoring checklist (required skills, preferred skills, experience, education, red flags).
+- Reads each resume (PDF or DOCX) and scores it against that checklist.
+- Ranks all candidates, with a score out of 100 and a plain-English summary of strengths, concerns and missing skills.
+- Runs an optional cross-candidate review that can adjust scores by up to 8 points when the ranking looks inconsistent.
+- Exports the results as a CSV file.
 
-### Step 2 — 5-Dimension Resume Scoring (`score_resume_against_profile`)
-Each resume is individually evaluated against the rubric across five weighted dimensions:
+## How it works
 
-| Dimension | Weight | What It Measures |
-|---|---|---|
-| Skills Match | **40%** | % of required (and preferred) skills explicitly present |
-| Experience Relevance | **30%** | Relevance & length of past roles to the JD |
-| Project Relevance | **15%** | Alignment of projects/work samples to responsibilities |
-| Education Fit | **10%** | Degree + field match to requirement |
-| Keyword Coverage | **5%** | Domain-specific terminology coverage |
+The app runs a 3-step pipeline:
 
-**Penalty rules applied on top of the weighted score:**
-- Each missing required skill: −5 pts from `skills_match`
-- Each triggered red flag: −8 pts from `overall_score`
-- Seniority mismatch (e.g. Junior → Senior role): −10 pts from `overall_score`
+1. **Job description analysis.** The language model extracts a structured profile from the job description (as JSON).
+2. **Resume scoring.** Each resume is scored on five dimensions. The model gives a 0-100 score for each one.
+3. **Ranking refinement (optional).** All scores are sent back to the model for a consistency check. Changes are limited to +/- 8 points.
 
-### Step 3 — Ranking Refinement (`refine_rankings`)
-All scored candidates are sent together for a comparative review. The model applies small adjustments (±8 pts max) where scores appear inconsistent relative to the full pool — e.g., a strong all-rounder that was underscored against a one-dimensional candidate.
+### Scoring weights
 
----
-
-## Why This Beats Naive Keyword Matching
-
-| Naive Keyword Matching | HireSense |
+| Dimension | Weight |
 |---|---|
-| Scores resumes that _look like_ the JD | Scores based on explicit skill presence |
-| No semantic understanding | Understands equivalences ("React" ≈ "ReactJS") |
-| No penalty for missing skills | Explicit penalty per missing required skill |
-| Raw years count as experience | Measures relevance, not just length |
-| No project quality signal | Rewards quantifiable impact and metrics |
+| Skills match | 40% |
+| Experience relevance | 30% |
+| Project relevance | 15% |
+| Education fit | 10% |
+| Keyword coverage | 5% |
 
----
+The overall score is calculated **in Python code**, not by the model, so it always matches the dimension scores. Each red flag found on a resume subtracts 8 points, up to a maximum of 20.
 
-## Features
+### Design choices
 
-- **Multi-format support** — PDF, DOCX, and plain text resumes
-- **5-dimension scoring** with configurable weights
-- **Penalty rules** for missing skills, red flags, and seniority mismatch
-- **Ranking refinement** — cross-candidate consistency pass
-- **File deduplication** — identical files scored once, reused
-- **Token budgeting** — resumes capped at 2,500 words before LLM call
-- **CSV export** — download full results table
-- **Multiple LLM backends** via OpenRouter (GPT-4o, Claude, Llama, Phi-3)
-- **Recruiter summaries** — 2–3 sentence objective evaluation per candidate
+- Strict JSON prompts, with one automatic retry if the model returns broken JSON.
+- Duplicate files are scored once and the result is reused.
+- Resume text is capped at 1,500 words to keep token use and cost low.
+- If the job description cannot be read, or every resume scores 0, the app shows an error instead of fake results.
+- A short pause between resumes keeps the app under free-tier rate limits.
 
----
+## Tech stack
 
-## Setup
+- Python 3.10+
+- Streamlit (interface)
+- Groq API through the OpenAI Python SDK (model: `openai/gpt-oss-120b`)
+- PyPDF2 and python-docx (file reading)
+- pandas (results table and CSV export)
+- python-dotenv (local configuration)
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/your-username/hiresense.git
-cd hiresense
-```
+## Run it locally
 
-### 2. Install dependencies
-```bash
-pip install -r requirements.txt
-```
+1. Install Python 3.10 or newer.
+2. Clone the repo and open the folder:
+   ```
+   git clone https://github.com/<your-username>/HIRE-SENSE.git
+   cd HIRE-SENSE
+   ```
+3. Install the packages:
+   ```
+   python -m pip install -r requirements.txt
+   ```
+4. Get a free API key at [console.groq.com](https://console.groq.com) and create a file named `.env` in the project folder:
+   ```
+   GROQ_API_KEY=your_key_here
+   ```
+5. Start the app:
+   ```
+   python -m streamlit run app.py
+   ```
+6. Open http://localhost:8501.
 
-### 3. Configure your API key
-Create a `.env` file in the project root:
-```env
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-```
-Get your key at [openrouter.ai](https://openrouter.ai).
+Never commit your `.env` file. It is listed in `.gitignore`.
 
-### 4. Run the app
-```bash
-streamlit run app.py
-```
+## Deploy on Streamlit Community Cloud
 
----
+1. Push the repo to GitHub (without `.env`).
+2. Go to [share.streamlit.io](https://share.streamlit.io), click **Create app**, and choose this repo, the `main` branch and `app.py`.
+3. Open **Advanced settings** and paste this into **Secrets**:
+   ```
+   GROQ_API_KEY = "your_key_here"
+   ```
+4. Click **Deploy**.
 
-## Requirements
-
-```
-streamlit
-openai
-python-docx
-PyPDF2
-pandas
-python-dotenv
-```
-
-> Full list in `requirements.txt`
-
----
-
-## Supported Models
-
-| Label | Model ID |
-|---|---|
-| GPT-4o mini (fast) | `openai/gpt-4o-mini` |
-| GPT-4o (best quality) | `openai/gpt-4o` |
-| Claude 3 Haiku (fast · cheap) | `anthropic/claude-3-haiku` |
-| Llama 3 70B (open source) | `meta-llama/llama-3-70b-instruct` |
-| Phi-3 Mini 128k (free) | `microsoft/phi-3-mini-128k-instruct:free` |
-
-Switch models anytime from the sidebar — no code changes needed.
-
----
-
-## Project Structure
+## Project structure
 
 ```
-hiresense/
-├── app.py              # Main Streamlit application
-├── .env                # API key (not committed)
-├── .env.example        # Template for .env
+HIRE-SENSE/
+├── app.py              # Whole app: extraction, prompts, scoring, UI
 ├── requirements.txt    # Python dependencies
+├── .gitignore          # Keeps .env out of the repo
 └── README.md
 ```
 
----
+## Try it with sample data
 
-## Performance Design
+The `sample_data/` folder has a job description for a Junior AI Engineer and three fake resumes (strong, medium and weak match). A normal run should rank them in that order.
 
-- `@st.cache_resource` — prevents OpenRouter client re-initialisation on every rerun
-- SHA-256 file hashing — deduplicates identical resume files before scoring
-- 2,500-word resume cap — keeps token usage predictable and cost-controlled
-- 1,500-word JD cap — prevents prompt overflow on verbose job descriptions
+## Limitations
 
----
+- **Scores are not exact.** The same resume can score a few points differently between runs. Treat the output as a first-pass ranking and have a person review it.
+- **Close candidates can swap places.** The test resumes are far apart in quality. Ranking between near-equal candidates is less reliable.
+- **Text-only reading.** Scanned or image-based PDFs have no extractable text and are skipped.
+- **Limited bias checks.** The app does not test for bias. It should not be used to make hiring decisions on its own.
+- **Privacy.** Resume text is sent to a third-party API. Do not upload real candidate data unless you have permission and have reviewed the provider's data terms.
+- **Free-tier limits.** Large batches may hit rate limits. The app waits between resumes, so big runs are slow.
 
-## Output
+## Possible improvements
 
-Each candidate card shows:
-- Overall score (raw + refined) with label (Excellent / Good / Moderate / Weak / Poor)
-- Dimension-level breakdown (5 scores)
-- Matched and missing required skills (colour-coded chips)
-- Red flags triggered
-- Strengths and concerns
-- AI recruiter summary
-- Refinement delta with reason
+- Test the scoring on more realistic, closely matched resumes.
+- Add OCR for scanned PDFs.
+- Fix the education score for candidates with unrelated but valid degrees.
+- Add a score-consistency test that runs the same resume several times.
+- Let the user edit the extracted job profile before scoring.
 
-Full results are also available as a downloadable CSV.
+## Author
 
----
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `OPENROUTER_API_KEY` | Yes | Your OpenRouter API key |
-
----
-
-
----
-
-<div align="center">
-  <strong>Built with Streamlit · Powered by OpenRouter LLM API</strong>
-</div>
-
+Built by Muhammed Finan.
