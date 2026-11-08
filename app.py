@@ -455,8 +455,26 @@ def score_resume_against_profile(
         result.setdefault(k, v)
 
     # Clamp overall_score to valid range
-    result["overall_score"] = max(0, min(100, int(result.get("overall_score", 0))))
+    ds = result.get("dimension_scores", {})
+    if not isinstance(ds, dict):
+        ds = {}
 
+    def _d(key):
+        try:
+            return max(0, min(100, float(ds.get(key, 0))))
+        except (TypeError, ValueError):
+            return 0
+
+    base = (
+        _d("skills_match") * 0.40
+        + _d("experience_relevance") * 0.30
+        + _d("project_relevance") * 0.15
+        + _d("education_fit") * 0.10
+        + _d("keyword_coverage") * 0.05
+    )
+    flags = result.get("red_flags_triggered", [])
+    penalty = min(8 * len(flags), 20) if isinstance(flags, list) else 0
+    result["overall_score"] = max(0, min(100, round(base - penalty)))
     return result
 
 
