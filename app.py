@@ -130,7 +130,7 @@ def file_hash(file) -> str:
 # ═══════════════════════════════════════════════════════════════
 # SECTION 2 — LLM CALL WRAPPER
 # ═══════════════════════════════════════════════════════════════
-def call_llm(system_prompt: str, user_prompt: str, model: str,
+def _call_llm_once(system_prompt: str, user_prompt: str, model: str,
              max_tokens: int = 700, temperature: float = 0.1) -> dict | None:
     if not client:
         return None
@@ -196,6 +196,13 @@ def call_llm(system_prompt: str, user_prompt: str, model: str,
         st.warning(f"⚠️ LLM API error: {e}")
         return None
 
+def call_llm(system_prompt, user_prompt, model, max_tokens=700, temperature=0.1):
+    for attempt in range(2):
+        result = _call_llm_once(system_prompt, user_prompt, model, max_tokens, temperature)
+        if result is not None:
+            return result
+        time.sleep(5)
+    return None
 
 # ═══════════════════════════════════════════════════════════════
 # SECTION 3 — PROMPTS  (all prompts live here, easy to tune)
