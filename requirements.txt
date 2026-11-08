@@ -1,10 +1,6 @@
 streamlit
-sentence-transformers
-scikit-learn
-pandas
 PyPDF2
 python-docx
-graphviz
-numpy
-matplotlib
-nltk
+pandas
+openai
+python-dotenv
