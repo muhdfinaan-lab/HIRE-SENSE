@@ -143,6 +143,7 @@ def _call_llm_once(system_prompt: str, user_prompt: str, model: str,
             ],
             temperature=temperature,
             max_tokens=max(max_tokens, 2000),
+            extra_body={"reasoning_effort": "low"},            
         )
 
         # ── Guard: check response structure before accessing content ──
