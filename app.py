@@ -7,6 +7,7 @@ import re
 import os
 import json
 import hashlib
+import time
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -23,15 +24,15 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────
-# OPENROUTER CLIENT
+# GROQ CLIENT
 # ─────────────────────────────────────────────
 @st.cache_resource
 def load_client():
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        st.warning("⚠️ OPENROUTER_API_KEY not found in .env — AI features disabled.")
+        st.warning("⚠️ GROQ_API_KEY not found in .env — AI features disabled.")
         return None
-    return OpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
+    return OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
 
 client = load_client()
 
@@ -141,7 +142,7 @@ def call_llm(system_prompt: str, user_prompt: str, model: str,
                 {"role": "user",   "content": user_prompt},
             ],
             temperature=temperature,
-            max_tokens=max_tokens,
+            max_tokens=max(max_tokens, 2000),
         )
 
         # ── Guard: check response structure before accessing content ──
@@ -403,7 +404,7 @@ def score_resume_against_profile(
     Returns a fully-populated result dict (never None — falls back to zeros).
     """
     ideal_str = json.dumps(ideal_profile, indent=2)
-    clean_resume = truncate_text(resume_text, max_words=2500)
+    clean_resume = truncate_text(resume_text, max_words=1500)
 
     result = call_llm(
         system_prompt=SCORING_SYSTEM,
@@ -548,6 +549,9 @@ def run_screening_pipeline(
             state="complete",
         )
 
+    if not ideal_profile["required_skills"]:
+        st.error("❌ Could not read the job description. The AI call failed. See warnings above.")
+        return None, ideal_profile, []
     # ── Step 2: Score each resume ────────────────────────────────
     raw_results: list[dict] = []
     score_cache: dict[str, dict] = {}   # hash → result (deduplicates identical files)
@@ -574,6 +578,7 @@ def run_screening_pipeline(
         scored = score_resume_against_profile(text, ideal_profile, file.name, model)
         score_cache[fhash] = scored
         raw_results.append(scored)
+        time.sleep(10)
 
     progress_bar.progress(1.0, text="Scoring complete.")
 
@@ -581,6 +586,10 @@ def run_screening_pipeline(
         st.error("❌ No resumes could be scored. Check file formats.")
         return None, ideal_profile, []
 
+    if all(r.get("overall_score", 0) == 0 for r in raw_results):
+        st.error("❌ Every resume scored 0. The AI calls failed. Check warnings above.")
+        return None, ideal_profile, []
+        
     # ── Step 3: Optional refinement ─────────────────────────────
     if refine and len(raw_results) >= 2:
         with st.status("🔄 Step 3 — Refining rankings across all candidates...", expanded=False) as status:
@@ -648,11 +657,7 @@ def chips_html(items: list, chip_class: str) -> str:
 # ═══════════════════════════════════════════════════════════════
 
 MODELS = {
-    "GPT-4o mini  (fast)":    "openai/gpt-4o-mini",
-    "GPT-4o  (best quality)":               "openai/gpt-4o",
-    "Claude 3 Haiku  (fast · cheap)":       "anthropic/claude-3-haiku",
-    "Llama 3 70B  (open source)":           "meta-llama/llama-3-70b-instruct",
-    "Phi-3 Mini 128k  (free)":              "microsoft/phi-3-mini-128k-instruct:free",
+    "GPT-OSS 120B (Groq)": "openai/gpt-oss-120b",
 }
 
 with st.sidebar:
